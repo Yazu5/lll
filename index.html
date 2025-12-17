@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pick a Song</title>
+
+<style>
+* {
+  box-sizing: border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(160deg, #1a1a1a, #0f0f0f);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  overflow-x: hidden;
+}
+
+.container {
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  transition: all 0.4s ease;
+}
+
+/* SONG SCREEN */
+h1 {
+  text-align: center;
+  letter-spacing: 3px;
+  margin-bottom: 25px;
+}
+
+.song-card {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
+  border-radius: 18px;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.song-card:hover {
+  transform: scale(1.05);
+  background: rgba(255,255,255,0.15);
+}
+
+.album {
+  width: 70px;
+  height: 70px;
+  border-radius: 12px;
+  object-fit: cover;
+  margin-right: 15px;
+}
+
+.song-info h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.song-info p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+/* LETTER SCREEN */
+#letterScreen {
+  display: none;
+  text-align: center;
+}
+
+/* ENVELOPE ICON */
+.envelope {
+  font-size: 80px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: transform 0.4s ease, text-shadow 0.3s ease;
+}
+
+.envelope:hover {
+  transform: scale(1.15) rotate(-5deg);
+  text-shadow: 0 0 15px #fff, 0 0 25px #fffc;
+}
+
+/* LETTER FOLD ANIMATION */
+.letter {
+  display: none;
+  margin-top: 20px;
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(8px);
+  padding: 20px;
+  border-radius: 18px;
+  text-align: left;
+  min-height: 180px;
+  line-height: 1.6;
+  font-size: 14px;
+  white-space: pre-wrap;
+  opacity: 0;
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.7s ease, opacity 0.7s ease, box-shadow 0.3s ease;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+}
+
+/* SONG END UI */
+#songEndUI {
+  display: none;
+  margin-top: 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease;
+}
+
+#songEndUI button {
+  padding: 12px 26px;
+  margin: 6px;
+  border-radius: 25px;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease, box-shadow 0.3s ease;
+  backdrop-filter: blur(5px);
+  background: rgba(255,255,255,0.9);
+  color: black;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+#songEndUI button:hover {
+  transform: scale(1.1);
+  opacity: 1;
+  box-shadow: 0 6px 20px rgba(255,255,255,0.4);
+}
+
+/* OPTIONAL SCROLLBAR HIDE FOR MOBILE */
+.letter::-webkit-scrollbar { display: none; }
+</style>
+</head>
+
+<body>
+
+<!-- SONG PICK SCREEN -->
+<div class="container" id="songScreen">
+  <h1>PICK A SONG</h1>
+
+  <div class="song-card" onclick="selectSong(0)">
+    <img src="fallen.jpg" class="album">
+    <div class="song-info">
+      <h2>FALLEN</h2>
+      <p>Trevor Daniel</p>
+    </div>
+  </div>
+
+  <div class="song-card" onclick="selectSong(1)">
+    <img src="sanctuary.jpg" class="album">
+    <div class="song-info">
+      <h2>SANCTUARY</h2>
+      <p>Joji</p>
+    </div>
+  </div>
+
+  <div class="song-card" onclick="selectSong(2)">
+    <img src="lastchristmas.jpg" class="album">
+    <div class="song-info">
+      <h2>LAST CHRISTMAS</h2>
+      <p>Wham!</p>
+    </div>
+  </div>
+</div>
+
+<!-- LETTER SCREEN -->
+<div class="container" id="letterScreen">
+  <div class="envelope" onclick="unfoldLetter()">✉️</div>
+  <div class="letter" id="letterText"></div>
+
+  <!-- SONG END UI -->
+  <div id="songEndUI">
+    <button onclick="replaySong()">REPLAY SONG</button>
+    <button onclick="changeSong()">CHANGE SONG</button>
+  </div>
+</div>
+
+<!-- AUDIO -->
+<audio src="fallen.mp3"></audio>
+<audio src="sanctuary.mp3"></audio>
+<audio src="lastchristmas.mp3"></audio>
+
+<script>
+const audios = document.querySelectorAll("audio");
+let letterContent = "";
+let currentSongIndex = 0;
+let letterOpened = false;
+
+/* LOAD LETTER FILE */
+fetch("letter.txt")
+  .then(res => res.text())
+  .then(text => letterContent = text);
+
+/* SONG SELECTION */
+function selectSong(index) {
+  currentSongIndex = index;
+  audios.forEach((a,i)=>{
+    a.pause();
+    a.currentTime = 0;
+    if(i === index) a.play();
+  });
+
+  document.getElementById("songScreen").style.display = "none";
+  document.getElementById("letterScreen").style.display = "block";
+
+  // Reset letter
+  const letter = document.getElementById("letterText");
+  letter.style.display = "none";
+  letter.textContent = "";
+  letter.style.opacity = 0;
+  letter.style.transform = "scaleY(0)";
+  letterOpened = false;
+
+  // Hide song end UI
+  const songEndUI = document.getElementById("songEndUI");
+  songEndUI.style.display = "none";
+  songEndUI.style.opacity = 0;
+  songEndUI.style.transform = "translateY(20px)";
+}
+
+/* LETTER UNFOLD ANIMATION + TYPING */
+function unfoldLetter() {
+  if(letterOpened) return; // one-time tap
+  letterOpened = true;
+
+  const letter = document.getElementById("letterText");
+  letter.style.display = "block";
+  setTimeout(() => {
+    letter.style.transform = "scaleY(1)";
+    letter.style.opacity = 1;
+  }, 50);
+
+  // Typing effect
+  let i = 0;
+  const typing = setInterval(() => {
+    letter.textContent += letterContent.charAt(i);
+    i++;
+    if (i >= letterContent.length) clearInterval(typing);
+  }, 40);
+}
+
+/* SONG END DETECTION */
+audios.forEach((audio, index) => {
+  audio.addEventListener('ended', () => {
+    if(index === currentSongIndex) {
+      const songEndUI = document.getElementById("songEndUI");
+      songEndUI.style.display = "block";
+      setTimeout(() => {
+        songEndUI.style.opacity = 1;
+        songEndUI.style.transform = "translateY(0)";
+      }, 50);
+    }
+  });
+});
+
+/* REPLAY SONG */
+function replaySong() {
+  const audio = audios[currentSongIndex];
+  audio.currentTime = 0;
+  audio.play();
+
+  // Reset letter
+  const letter = document.getElementById("letterText");
+  letter.style.display = "none";
+  letter.textContent = "";
+  letter.style.opacity = 0;
+  letter.style.transform = "scaleY(0)";
+  letterOpened = false;
+
+  // Hide song end UI
+  const songEndUI = document.getElementById("songEndUI");
+  songEndUI.style.display = "none";
+  songEndUI.style.opacity = 0;
+  songEndUI.style.transform = "translateY(20px)";
+}
+
+/* CHANGE SONG */
+function changeSong() {
+  audios.forEach(a => {
+    a.pause();
+    a.currentTime = 0;
+  });
+
+  document.getElementById("letterScreen").style.display = "none";
+  document.getElementById("songScreen").style.display = "block";
+
+  // Hide song end UI
+  const songEndUI = document.getElementById("songEndUI");
+  songEndUI.style.display = "none";
+  songEndUI.style.opacity = 0;
+  songEndUI.style.transform = "translateY(20px)";
+}
+</script>
+
+</body>
+</html>
